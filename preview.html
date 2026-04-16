@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Roblox Kids Simulator</title>
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+
+<style>
+body{
+    margin:0;
+    font-family:Arial;
+    background:#3aa0ff;
+    color:white;
+}
+
+/* TOP BAR */
+.topbar{
+    display:flex;
+    gap:10px;
+    padding:10px;
+    background:rgba(0,0,0,0.2);
+    align-items:center;
+}
+
+input{
+    flex:1;
+    padding:6px;
+    border-radius:8px;
+    border:none;
+}
+
+/* LAYOUT */
+.container{display:flex;}
+
+.sidebar{
+    width:220px;
+    height:100vh;
+    background:rgba(0,0,0,0.2);
+    padding:10px;
+}
+
+.tab{
+    padding:10px;
+    margin:8px 0;
+    background:rgba(255,255,255,0.15);
+    border-radius:10px;
+    cursor:pointer;
+}
+
+.main{
+    flex:1;
+    padding:15px;
+}
+
+.page{
+    display:none;
+}
+
+.card{
+    display:inline-block;
+    width:180px;
+    padding:10px;
+    margin:8px;
+    background:rgba(255,255,255,0.15);
+    border-radius:12px;
+}
+
+button{
+    width:100%;
+    margin-top:6px;
+    padding:6px;
+    border:none;
+    border-radius:8px;
+    background:#ffffff55;
+    cursor:pointer;
+}
+
+/* ECONOMY */
+.panel{
+    position:fixed;
+    right:10px;
+    top:60px;
+    width:200px;
+    background:rgba(0,0,0,0.25);
+    padding:10px;
+    border-radius:10px;
+    display:none;
+}
+
+/* AVATAR */
+#avatar3d{
+    width:100%;
+    height:300px;
+}
+</style>
+</head>
+
+<body>
+
+<!-- TOP -->
+<div class="topbar">
+    <b>ROBLOX KIDS SIM</b>
+    <input placeholder="Search games...">
+    <button onclick="toggleEco()">💰 Economy</button>
+</div>
+
+<!-- ECONOMY -->
+<div class="panel" id="ecoPanel">
+    💰 Balance: 1000
+</div>
+
+<div class="container">
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+    <div class="tab" onclick="show('home')">🏠 Home</div>
+    <div class="tab" onclick="show('games')">🎮 Games</div>
+    <div class="tab" onclick="show('market')">🛒 Marketplace</div>
+    <div class="tab" onclick="show('friends')">👬 Friends</div>
+    <div class="tab" onclick="show('settings')">⚙️ Settings</div>
+    <div class="tab" onclick="show('avatar')">👤 Avatar</div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+<!-- HOME -->
+<div id="home" class="page" style="display:block;">
+    <h2>🏠 Home</h2>
+    <p>Welcome to Roblox Kids Simulator!</p>
+</div>
+
+<!-- GAMES -->
+<div id="games" class="page">
+    <h2>🎮 Games</h2>
+
+    <div class="card">Obby World<br><button>Play</button></div>
+    <div class="card">Tycoon Sim<br><button>Play</button></div>
+    <div class="card">Race Run<br><button>Play</button></div>
+</div>
+
+<!-- MARKET -->
+<div id="market" class="page">
+    <h2>🛒 Marketplace</h2>
+
+    <div class="card">🔥 Fire Shirt<br><button>Buy</button></div>
+    <div class="card">😎 Cool Shirt<br><button>Buy</button></div>
+    <div class="card">👑 Crown<br><button>Buy</button></div>
+</div>
+
+<!-- FRIENDS -->
+<div id="friends" class="page">
+    <h2>👬 Friends</h2>
+    <p>Alex<br>Sam<br>NoobMaster<br>ProGamer</p>
+</div>
+
+<!-- SETTINGS -->
+<div id="settings" class="page">
+    <h2>⚙️ Settings</h2>
+    <p>Sound: ON</p>
+    <p>Graphics: LOW</p>
+    <p>Kids Mode: ACTIVE</p>
+</div>
+
+<!-- AVATAR -->
+<div id="avatar" class="page">
+    <h2>👤 Avatar Studio</h2>
+
+    <div id="avatar3d"></div>
+
+    <h3>😆 Faces</h3>
+    <button onclick="setFace('happy')">😀 Happy</button>
+    <button onclick="setFace('cool')">😎 Cool</button>
+    <button onclick="setFace('sus')">😏 Sus</button>
+    <button onclick="setFace('dead')">💀 Dead</button>
+    <button onclick="setFace('cry')">😭 Cry</button>
+    <button onclick="setFace('angry')">😡 Angry</button>
+    <button onclick="setFace('wow')">😲 Wow</button>
+    <button onclick="setFace('sleep')">😴 Sleep</button>
+
+    <h3>👕 Shirts</h3>
+    <button onclick="setShirt('fire')">🔥 Fire</button>
+    <button onclick="setShirt('cool')">😎 Cool</button>
+
+    <h3>👖 Pants</h3>
+    <button onclick="setPants('jeans')">👖 Jeans</button>
+    <button onclick="setPants('robot')">🤖 Robot</button>
+</div>
+
+</div>
+</div>
+
+<script>
+
+let scene,camera,renderer;
+
+let parts = {};
+
+/* NAVIGATION */
+function show(id){
+    document.querySelectorAll(".page").forEach(p=>{
+        p.style.display="none";
+    });
+    document.getElementById(id).style.display="block";
+
+    if(id==="avatar" && !renderer){
+        init3D();
+    }
+}
+
+/* ECONOMY */
+function toggleEco(){
+    let p=document.getElementById("ecoPanel");
+    p.style.display=(p.style.display==="block")?"none":"block";
+}
+
+/* TEXTURE */
+function tex(txt,bg){
+    let c=document.createElement("canvas");
+    c.width=128;c.height=128;
+    let ctx=c.getContext("2d");
+
+    ctx.fillStyle=bg;
+    ctx.fillRect(0,0,128,128);
+
+    ctx.font="50px Arial";
+    ctx.textAlign="center";
+    ctx.fillText(txt,64,75);
+
+    return new THREE.CanvasTexture(c);
+}
+
+/* INIT AVATAR */
+function init3D(){
+
+    scene=new THREE.Scene();
+
+    camera=new THREE.PerspectiveCamera(75,window.innerWidth/300,0.1,1000);
+    camera.position.z=5;
+
+    renderer=new THREE.WebGLRenderer({alpha:true});
+    renderer.setSize(window.innerWidth,300);
+
+    document.getElementById("avatar3d").appendChild(renderer.domElement);
+
+    let mat=new THREE.MeshBasicMaterial({color:"#fff"});
+
+    let mats=[
+        mat.clone(),mat.clone(),mat.clone(),mat.clone(),mat.clone(),mat.clone()
+    ];
+
+    parts.head=new THREE.Mesh(new THREE.BoxGeometry(1,1,1),mats);
+    parts.head.position.y=2;
+    parts.head.mats=mats;
+
+    parts.torso=new THREE.Mesh(new THREE.BoxGeometry(1.5,2,1),mat.clone());
+
+    parts.leftArm=new THREE.Mesh(new THREE.BoxGeometry(0.4,1.5,0.4),mat.clone());
+    parts.rightArm=new THREE.Mesh(new THREE.BoxGeometry(0.4,1.5,0.4),mat.clone());
+
+    parts.leftLeg=new THREE.Mesh(new THREE.BoxGeometry(0.5,1.5,0.5),mat.clone());
+    parts.rightLeg=new THREE.Mesh(new THREE.BoxGeometry(0.5,1.5,0.5),mat.clone());
+
+    parts.leftArm.position.set(-1.2,0.5,0);
+    parts.rightArm.position.set(1.2,0.5,0);
+    parts.leftLeg.position.set(-0.4,-2,0);
+    parts.rightLeg.position.set(0.4,-2,0);
+
+    Object.values(parts).forEach(p=>scene.add(p));
+
+    animate();
+}
+
+/* FACE (FRONT ONLY) */
+function setFace(t){
+    let map={
+        happy:"😀",cool:"😎",sus:"😏",dead:"💀",
+        cry:"😭",angry:"😡",wow:"😲",sleep:"😴"
+    };
+
+    let ttx = tex(map[t],"#fff");
+
+    parts.head.mats[4].map = ttx; // FRONT FACE
+    parts.head.mats[4].needsUpdate = true;
+}
+
+/* SHIRTS */
+function setShirt(t){
+    let texMap={
+        fire:tex("🔥","#ff4444"),
+        cool:tex("😎","#4444ff")
+    };
+
+    parts.torso.material.map = texMap[t];
+    parts.torso.material.needsUpdate = true;
+}
+
+/* PANTS */
+function setPants(t){
+    let texMap={
+        jeans:tex("👖","#333"),
+        robot:tex("🤖","#888")
+    };
+
+    parts.leftLeg.material.map = texMap[t];
+    parts.rightLeg.material.map = texMap[t];
+
+    parts.leftLeg.material.needsUpdate = true;
+    parts.rightLeg.material.needsUpdate = true;
+}
+
+/* LOOP */
+function animate(){
+    requestAnimationFrame(animate);
+    scene.rotation.y+=0.01;
+    renderer.render(scene,camera);
+}
+
+</script>
+
+</body>
+</html>
