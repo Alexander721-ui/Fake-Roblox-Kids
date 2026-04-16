@@ -66,3 +66,343 @@ button{
     background:#ffffff55;
     cursor:pointer;
 }
+
+.panel{
+    position:fixed;
+    right:10px;
+    top:60px;
+    width:200px;
+    background:rgba(0,0,0,0.25);
+    padding:10px;
+    border-radius:10px;
+    display:none;
+}
+
+#avatar3d{
+    width:100%;
+    height:300px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="topbar">
+    <b>ROBLOX KIDS SIM v5</b>
+    <input placeholder="Search games...">
+    <button onclick="toggleEco()">💰 Economy</button>
+</div>
+
+<div class="panel" id="ecoPanel">
+    💰 Balance: 1000
+</div>
+
+<div class="container">
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+    <div class="tab" onclick="show('home')">🏠 Home</div>
+    <div class="tab" onclick="show('games')">🎮 Games</div>
+    <div class="tab" onclick="show('market')">🛒 Marketplace</div>
+    <div class="tab" onclick="show('friends')">👬 Friends</div>
+    <div class="tab" onclick="show('accessories')">🎩 Accessories</div>
+    <div class="tab" onclick="show('settings')">⚙️ Settings</div>
+    <div class="tab" onclick="show('avatar')">👤 Avatar</div>
+</div>
+
+<div class="main">
+
+<!-- HOME -->
+<div id="home" class="page" style="display:block;">
+    <h2>🏠 Home</h2>
+    <p>Simulation OS running...</p>
+</div>
+
+<!-- GAMES -->
+<div id="games" class="page">
+    <h2>🎮 Games</h2>
+    <div id="gamesList"></div>
+</div>
+
+<!-- MARKET -->
+<div id="market" class="page">
+    <h2>🛒 Marketplace</h2>
+    <div class="card">🔥 Fire Shirt<button>Buy</button></div>
+    <div class="card">😎 Cool Shirt<button>Buy</button></div>
+    <div class="card">👑 Crown<button>Buy</button></div>
+</div>
+
+<!-- FRIENDS -->
+<div id="friends" class="page"></div>
+
+<!-- ACCESSORIES -->
+<div id="accessories" class="page">
+    <h2>🎩 Accessories</h2>
+
+    <div class="card">🔥 Fire Aura<button onclick="toggleAccessory('fire')">Toggle</button></div>
+    <div class="card">📦 Engine Box<button onclick="toggleAccessory('engine')">Toggle</button></div>
+    <div class="card">⚡ Electric Ring<button onclick="toggleAccessory('electric')">Toggle</button></div>
+</div>
+
+<!-- SETTINGS -->
+<div id="settings" class="page">
+    <h2>⚙️ Settings</h2>
+    <p>Graphics: LOW</p>
+    <p>Kids Mode: ON</p>
+</div>
+
+<!-- AVATAR -->
+<div id="avatar" class="page">
+    <h2>👤 Avatar</h2>
+    <div id="avatar3d"></div>
+
+    <h3>Faces</h3>
+    <button onclick="toggleFace('happy')">😀 Happy</button>
+    <button onclick="toggleFace('cool')">😎 Cool</button>
+    <button onclick="toggleFace('sus')">😏 Sus</button>
+
+    <h3>Shirts</h3>
+    <button onclick="toggleShirt('fire')">🔥 Fire</button>
+    <button onclick="toggleShirt('cool')">😎 Cool</button>
+
+    <h3>Pants</h3>
+    <button onclick="togglePants('jeans')">👖 Jeans</button>
+    <button onclick="togglePants('robot')">🤖 Robot</button>
+</div>
+
+</div>
+</div>
+
+<script>
+
+/* NAV */
+function show(id){
+    document.querySelectorAll(".page").forEach(p=>p.style.display="none");
+    document.getElementById(id).style.display="block";
+
+    if(id==="avatar" && !renderer){
+        init3D();
+    }
+}
+
+/* ECONOMY */
+function toggleEco(){
+    let p=document.getElementById("ecoPanel");
+    p.style.display=(p.style.display==="block")?"none":"block";
+}
+
+/* ---------------- SIM ---------------- */
+
+let games=[];
+let friends=[
+    {name:"Alex",online:true},
+    {name:"Sam",online:false},
+    {name:"Noob",online:true},
+    {name:"Pro",online:true}
+];
+
+function generateGames(){
+    let base=["Obby","Tycoon","Race","Sim","Fight","RP"];
+
+    for(let i=0;i<60;i++){
+        games.push({
+            name: base[Math.floor(Math.random()*base.length)]+" "+i,
+            players: Math.floor(Math.random()*5000)+1
+        });
+    }
+}
+
+function updateGames(){
+    games.forEach(g=>{
+        g.players += Math.floor(Math.random()*200-100);
+        if(g.players<1) g.players=1;
+    });
+}
+
+function renderGames(){
+    let c=document.getElementById("gamesList");
+    c.innerHTML="";
+    games.forEach(g=>{
+        c.innerHTML+=`
+        <div class="card">
+            <b>${g.name}</b><br>
+            👥 ${g.players}+ players
+            <button>Play</button>
+        </div>`;
+    });
+}
+
+function updateFriends(){
+    friends.forEach(f=>{
+        if(Math.random()<0.3) f.online=!f.online;
+    });
+}
+
+function renderFriends(){
+    let p=document.getElementById("friends");
+    p.innerHTML="<h2>👬 Friends</h2>";
+
+    friends.forEach(f=>{
+        p.innerHTML+=`
+        <div class="card">
+            <b>${f.name}</b><br>
+            ${f.online?"🟢 Online":"⚫ Offline"}
+        </div>`;
+    });
+}
+
+/* ---------------- AVATAR ---------------- */
+
+let scene,camera,renderer;
+let parts={};
+let accessories={};
+
+function init3D(){
+
+    scene=new THREE.Scene();
+    camera=new THREE.PerspectiveCamera(75,window.innerWidth/300,0.1,1000);
+    camera.position.z=5;
+
+    renderer=new THREE.WebGLRenderer({alpha:true});
+    renderer.setSize(window.innerWidth,300);
+    document.getElementById("avatar3d").appendChild(renderer.domElement);
+
+    let mat=new THREE.MeshBasicMaterial({color:"#fff"});
+    let mats=[mat.clone(),mat.clone(),mat.clone(),mat.clone(),mat.clone(),mat.clone()];
+
+    parts.head=new THREE.Mesh(new THREE.BoxGeometry(1,1,1),mats);
+    parts.head.position.y=2;
+    parts.head.mats=mats;
+
+    parts.torso=new THREE.Mesh(new THREE.BoxGeometry(1.5,2,1),mat.clone());
+
+    parts.leftArm=new THREE.Mesh(new THREE.BoxGeometry(0.4,1.5,0.4),mat.clone());
+    parts.rightArm=new THREE.Mesh(new THREE.BoxGeometry(0.4,1.5,0.4),mat.clone());
+
+    parts.leftLeg=new THREE.Mesh(new THREE.BoxGeometry(0.5,1.5,0.5),mat.clone());
+    parts.rightLeg=new THREE.Mesh(new THREE.BoxGeometry(0.5,1.5,0.5),mat.clone());
+
+    parts.leftArm.position.set(-1.2,0.5,0);
+    parts.rightArm.position.set(1.2,0.5,0);
+    parts.leftLeg.position.set(-0.4,-2,0);
+    parts.rightLeg.position.set(0.4,-2,0);
+
+    Object.values(parts).forEach(p=>scene.add(p));
+
+    addAccessories();
+    animate();
+}
+
+/* TEXTURE */
+function tex(t,b){
+    let c=document.createElement("canvas");
+    c.width=128;c.height=128;
+    let x=c.getContext("2d");
+
+    x.fillStyle=b;
+    x.fillRect(0,0,128,128);
+
+    x.font="50px Arial";
+    x.textAlign="center";
+    x.fillText(t,64,75);
+
+    return new THREE.CanvasTexture(c);
+}
+
+/* TOGGLES */
+let currentFace=null;
+function toggleFace(t){
+    let map={happy:"😀",cool:"😎",sus:"😏"};
+
+    if(currentFace===t){
+        parts.head.mats[4].map=null;
+        currentFace=null;
+    }else{
+        parts.head.mats[4].map=tex(map[t],"#fff");
+        currentFace=t;
+    }
+    parts.head.mats[4].needsUpdate=true;
+}
+
+let currentShirt=null;
+function toggleShirt(t){
+    let m={fire:tex("🔥","#ff4444"),cool:tex("😎","#4444ff")};
+
+    if(currentShirt===t){
+        parts.torso.material.map=null;
+        currentShirt=null;
+    }else{
+        parts.torso.material.map=m[t];
+        currentShirt=t;
+    }
+    parts.torso.material.needsUpdate=true;
+}
+
+let currentPants=null;
+function togglePants(t){
+    let m={jeans:tex("👖","#333"),robot:tex("🤖","#888")};
+
+    if(currentPants===t){
+        parts.leftLeg.material.map=null;
+        parts.rightLeg.material.map=null;
+        currentPants=null;
+    }else{
+        parts.leftLeg.material.map=m[t];
+        parts.rightLeg.material.map=m[t];
+        currentPants=t;
+    }
+    parts.leftLeg.material.needsUpdate=true;
+    parts.rightLeg.material.needsUpdate=true;
+}
+
+/* ACCESSORIES */
+function addAccessories(){
+
+    accessories.fire=new THREE.Mesh(
+        new THREE.TorusGeometry(1.5,0.1,8,30),
+        new THREE.MeshBasicMaterial({color:"orange"})
+    );
+    accessories.fire.rotation.x=Math.PI/2;
+    scene.add(accessories.fire);
+
+    accessories.engine=new THREE.Mesh(
+        new THREE.BoxGeometry(1,1,1),
+        new THREE.MeshBasicMaterial({color:"#00ffff",wireframe:true})
+    );
+    accessories.engine.position.set(0,1,-2);
+    scene.add(accessories.engine);
+
+    accessories.electric=new THREE.Mesh(
+        new THREE.SphereGeometry(1.2,16,16),
+        new THREE.MeshBasicMaterial({color:"yellow",wireframe:true})
+    );
+    scene.add(accessories.electric);
+}
+
+function toggleAccessory(t){
+    accessories[t].visible=!accessories[t].visible;
+}
+
+/* LOOP */
+function animate(){
+    requestAnimationFrame(animate);
+    scene.rotation.y+=0.01;
+    renderer.render(scene,camera);
+}
+
+/* START */
+generateGames();
+renderGames();
+renderFriends();
+
+setInterval(()=>{
+    updateGames();
+    updateFriends();
+    renderGames();
+    renderFriends();
+},3000);
+
+</script>
+
+</body>
+</html>
